@@ -47,7 +47,6 @@ parser.add_argument('--merge-alleles', default=None, type=str,
                     help="Merge with another file on SNP, A1, A2, "
                     "and all alleles will be matched to the --merge-alleles file alleles.")
 
-parser.add_argument('--merge-ignore-alleles', default=False, action='store_true',"merge only on chromosome and position, not alleles")
 parser.add_argument('--merge-bim', default=None, type=str,
                     help="Same as merge-alleles, but with a plink-format .bim file")
 parser.add_argument('--n-min', default=None, type=float,
