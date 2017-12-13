@@ -46,6 +46,8 @@ parser.add_argument('--no-alleles', default=False, action='store_true',
 parser.add_argument('--merge-alleles', default=None, type=str,
                     help="Merge with another file on SNP, A1, A2, "
                     "and all alleles will be matched to the --merge-alleles file alleles.")
+
+parser.add_argument('--merge-ignore-alleles', default=False, action='store_true',"merge only on chromosome and position, not alleles")
 parser.add_argument('--merge-bim', default=None, type=str,
                     help="Same as merge-alleles, but with a plink-format .bim file")
 parser.add_argument('--n-min', default=None, type=float,
@@ -392,17 +394,6 @@ def parse_dat(dat_gen, convert_colname, merge_alleles, args):
         drops['NA'] += old - len(dat)
         dat.columns = map(lambda x: convert_colname[x], dat.columns)
         ii = np.array([True for _ in range(len(dat))])
-        if args.merge_alleles or args.merge_bim and not args.merge_on_pos:
-            if arch is not None:
-                dat.loc[dat.SNP.isin(arch.OLD), 'SNP'] = arch.NEW
-            old = ii.sum()
-            ii = dat.SNP.isin(merge_alleles.SNP)
-            drops['MERGE'] += old - ii.sum()
-            if ii.sum() == 0:
-                continue
-
-            dat = dat[ii].reset_index(drop=True)
-            ii = np.array([True for _ in range(len(dat))])
 
         if 'INFO' in dat.columns:
             old = ii.sum()
@@ -433,14 +424,6 @@ def parse_dat(dat_gen, convert_colname, merge_alleles, args):
         dat_list.append(dat[ii].reset_index(drop=True))
 
     dat = pd.concat(dat_list, axis=0).reset_index(drop=True)
-
-    if args.merge_on_pos:
-        old = len(dat)
-        dat = pd.merge(dat, merge_alleles, on=['CHR', 'POS'], how='inner')
-        dat = dat[((dat.A1_x == dat.A1_y) & (dat.A2_x == dat.A2_y)) | ((dat.A2_x == dat.A1_y) & (dat.A1_x == dat.A2_y))]
-        dat = dat.rename(columns={'SNP_y': 'SNP', 'A1_x': 'A1', 'A2_x': 'A2'})
-        dat = dat.drop(['A1_y', 'A2_y', 'SNP_x', 'MA'], 1)
-        drops['MERGE'] += old - len(dat)
 
     msg = 'Read {N} SNPs from --sumstats file.\n'.format(N=tot_snps)
     if args.merge_alleles or args.merge_bim:
@@ -568,7 +551,10 @@ def allele_merge(dat, alleles, args):
     WARNING: dat now contains a bunch of NA's~
     Note: dat now has the same SNPs in the same order as --merge alleles.
     """
-    dat = pd.merge(alleles, dat, how='left', on='SNP', sort=False).reset_index(drop=True)
+    if args.merge_on_pos:
+        dat = pd.merge(alleles, dat, how='left', on=['CHR', 'POS', 'A1', 'A2'], sort=False).reset_index(drop=True)
+    else:
+        dat = pd.merge(alleles, dat, how='left', on=['SNP', 'A1', 'A2'], sort=False).reset_index(drop=True)
     ii = dat.A1.notnull()
     a1234 = dat.A1[ii] + dat.A2[ii] + dat.MA[ii]
     match = a1234.apply(lambda y: y in MATCH_ALLELES)
@@ -725,7 +711,8 @@ def munge_sumstats(args, p=True):
 
         # filtering on N cannot be done chunkwise
         dat = process_n(dat, args)
-        dat['Z'] = p_to_z(dat.P)
+        if 'Z' not in dat:
+            dat['Z'] = p_to_z(dat.P)
         if not args.a1_inc:
             logging.info(
                 check_median(dat.SIGNED_SUMSTAT, signed_sumstat_null, 0.1, sign_cname))
@@ -759,8 +746,7 @@ def munge_sumstats(args, p=True):
         print_colnames = [
             c for c in dat.columns if c in ['SNP', 'CHR', 'POS', 'N', 'A1', 'A2', 'P', 'OR', 'FRQ', 'SE']]
         dat = dat.dropna(subset=['Z'])
-        msg = 'Writing summary statistics for {M} SNPs to {F}.'
-        logging.info(msg.format(M=len(dat), F=out_fname + '.gz'))
+        logging.info(f("Writing summary statistics for {len(dat)} SNPs to {out_fname}.")
 
         if args.hess:
             dat = dat.sort_values(by=['CHR', 'POS'])
@@ -776,15 +762,14 @@ def munge_sumstats(args, p=True):
                     datchrom.to_csv(out_fname + '_chr' + str(chrom), sep='\t', index=False)
 
             p = False
-
+        dat = dat.drop('SIGNED_SUMSTAT', 1)
         if args.round_N:
             dat.N = dat.N.apply(np.floor).astype(int)
         if p:
             if args.round_vals:
-                dat.to_csv(out_fname, sep='\t', index=False,
-                       columns=print_colnames, float_format='%.3f')
+                dat.to_csv(out_fname, sep='\t', index=False, float_format='%.3f')
             else:
-                dat.to_csv(out_fname, sep='\t', index=False, columns=print_colnames)
+                dat.to_csv(out_fname, sep='\t', index=False)
             if args.compress:
                 os.system('gzip -f {F}'.format(F=out_fname))
         logging.info('\nMetadata:')
