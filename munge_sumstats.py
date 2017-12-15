@@ -761,7 +761,6 @@ def munge_sumstats(args, p=True):
                     datchrom.to_csv(out_fname + '_chr' + str(chrom), sep='\t', index=False)
 
             p = False
-        dat = dat.drop('SIGNED_SUMSTAT', 1)
         if args.round_N:
             dat.N = dat.N.apply(np.floor).astype(int)
         if p:
