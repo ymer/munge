@@ -711,7 +711,7 @@ def munge_sumstats(args, p=True):
         dat = process_n(dat, args)
         if 'Z' not in dat:
             dat['Z'] = p_to_z(dat.P)
-        if not args.a1_inc:
+        if args.a1_inc:
             logging.info(
                 check_median(dat.SIGNED_SUMSTAT, signed_sumstat_null, 0.1, sign_cname))
             dat.Z *= (-1) ** (dat.SIGNED_SUMSTAT < signed_sumstat_null)
