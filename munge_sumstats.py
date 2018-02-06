@@ -15,7 +15,6 @@ import itertools as it
 import math
 np.seterr(invalid='ignore')
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(message)s')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('sumstats', default=None, type=str,
@@ -714,7 +713,7 @@ def munge_sumstats(args, p=True):
         dat = process_n(dat, args)
         if 'Z' not in dat:
             dat['Z'] = p_to_z(dat.P)
-        if not args.a1_inc:
+        if args.a1_inc:
             logging.info(
                 check_median(dat.SIGNED_SUMSTAT, signed_sumstat_null, 0.1, sign_cname))
             dat.Z *= (-1) ** (dat.SIGNED_SUMSTAT < signed_sumstat_null)
@@ -747,7 +746,7 @@ def munge_sumstats(args, p=True):
         print_colnames = [
             c for c in dat.columns if c in ['SNP', 'CHR', 'POS', 'N', 'A1', 'A2', 'P', 'OR', 'FRQ', 'SE']]
         dat = dat.dropna(subset=['Z'])
-        logging.info(f("Writing summary statistics for {len(dat)} SNPs to {out_fname}."))
+        logging.info(f"Writing summary statistics for {len(dat)} SNPs to {out_fname}.")
 
         if args.hess:
             dat = dat.sort_values(by=['CHR', 'POS'])
@@ -794,5 +793,8 @@ def munge_sumstats(args, p=True):
         raise
 
 if __name__ == '__main__':
-    munge_sumstats(parser.parse_args(), p=True)
+    args = parser.parse_args()
+    logging.basicConfig(format="%(message)s", datefmt="%H:%M:%S", handlers=[logging.FileHandler(f"{args.out}.log"), 
+        logging.StreamHandler()], level=logging.DEBUG)
+    munge_sumstats(args, p=True)
 
