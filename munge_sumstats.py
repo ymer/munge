@@ -267,7 +267,9 @@ def sec_to_str(t):
 def read_header(fh):
     """Read the first line of a file and returns a list with the column names."""
     openfunc, compression = get_compression(fh)
-    return [x.rstrip('\n') for x in openfunc(fh).readline().split()]
+    if compression == 'gzip':
+        with gzip.open(fh, mode='rt') as inp:
+            return [x.rstrip('\n') for x in inp.readline().split()]
 
 
 def get_cname_map(flag, default, ignore):
