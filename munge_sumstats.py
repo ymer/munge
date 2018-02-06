@@ -762,6 +762,7 @@ def munge_sumstats(args, p=True):
                     datchrom.to_csv(out_fname + '_chr' + str(chrom), sep='\t', index=False)
 
             p = False
+        dat = dat.drop('SIGNED_SUMSTAT', 1)
         if args.round_N:
             dat.N = dat.N.apply(np.floor).astype(int)
         if p:
@@ -788,7 +789,7 @@ def munge_sumstats(args, p=True):
         logging.info('\n\n-----------------------------------------------\n\n\n')
 
     except Exception:
-        logging.info('\nERROR converting summary statistics:\n')
+        logging.exception('\nERROR converting summary statistics:\n')
         ex_type, ex, tb = sys.exc_info()
         raise
 
