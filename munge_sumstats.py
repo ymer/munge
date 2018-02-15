@@ -768,10 +768,6 @@ def munge_sumstats(args, p=True):
 
             p = False
 
-        if args.gcta:
-            dat = dat.rename_col
-
-
 
         dat = dat.drop('SIGNED_SUMSTAT', 1)
         if args.round_N:
