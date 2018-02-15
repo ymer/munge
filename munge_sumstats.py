@@ -751,7 +751,7 @@ def munge_sumstats(args, p=True):
         print_colnames = [
             c for c in dat.columns if c in ['SNP', 'CHR', 'POS', 'N', 'A1', 'A2', 'P', 'OR', 'FRQ', 'SE']]
         dat = dat.dropna(subset=['Z'])
-        logging.info("Writing summary statistics for {1} SNPs to {2}.".format('1'=len(dat), '2'=out_fname))
+        logging.info("Writing summary statistics for {1} SNPs to {2}.".format(1=len(dat), 2=out_fname))
 
         if args.hess:
             dat = dat.sort_values(by=['CHR', 'POS'])
