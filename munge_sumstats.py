@@ -269,6 +269,10 @@ def read_header(fh):
     if compression == 'gzip':
         with gzip.open(fh, mode='rt') as inp:
             return [x.rstrip('\n') for x in inp.readline().split()]
+    else:
+        with open(fh) as inp:
+            return [x.rstrip('\n') for x in inp.readline().split()]
+
 
 
 def get_cname_map(flag, default, ignore):
