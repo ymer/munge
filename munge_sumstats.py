@@ -758,8 +758,8 @@ def munge_sumstats(args, p=True):
             n = len(dat)
             for pairs in [['A', 'T'], ['T', 'A'], ['C', 'G'], ['G', 'C']]:
                 dat = dat[~((dat.A1 == pairs[0]) & (dat.A2 == pairs[1]))]
-            logging.info("{} strand-ambigious SNPs were removed".format(n - len(dat))
-            dath = dat.rename(columns={'SNP': 'rsID', 'POS': 'pos', 'A1': 'A0', 'A2': 'A1', 'Z': 'Z-score'})
+            logging.info("{} strand-ambigious SNPs were removed".format(n - len(dat)))
+            dat = dat.rename(columns={'SNP': 'rsID', 'POS': 'pos', 'A1': 'A0', 'A2': 'A1', 'Z': 'Z-score'})
             for chrom in range(1, 23):
                 datchrom = dath[dath.CHR == chrom]
                 if not datchrom.empty:
@@ -810,7 +810,7 @@ def munge_sumstats(args, p=True):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    logging.basicConfig(format="%(message)s", datefmt="%H:%M:%S", handlers=[logging.FileHandler("{}.log".format(args.out),
+    logging.basicConfig(format="%(message)s", datefmt="%H:%M:%S", handlers=[logging.FileHandler("{}.log".format(args.out)),
         logging.StreamHandler()], level=logging.DEBUG)
     munge_sumstats(args, p=True)
 
