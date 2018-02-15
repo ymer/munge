@@ -68,6 +68,7 @@ parser.add_argument('--use-or', default=False, action='store_true',
                     help="Output odds ratio instead of Z")
 parser.add_argument('--merge-on-pos', default=False, action='store_true', help="Merge on position instead of SNP name")
 parser.add_argument('--hess', default=False, action='store_true', help="Output in format for HESS method")
+parser.add_argument('--gcta', default=False, action='store_true', help="Output in GCTA-COJO format")
 
 
 # optional args to specify column names
@@ -750,14 +751,14 @@ def munge_sumstats(args, p=True):
         print_colnames = [
             c for c in dat.columns if c in ['SNP', 'CHR', 'POS', 'N', 'A1', 'A2', 'P', 'OR', 'FRQ', 'SE']]
         dat = dat.dropna(subset=['Z'])
-        logging.info(f"Writing summary statistics for {len(dat)} SNPs to {out_fname}.")
+        logging.info("Writing summary statistics for {1} SNPs to {2}.".format('1'=len(dat), '2'=out_fname))
 
         if args.hess:
             dat = dat.sort_values(by=['CHR', 'POS'])
             n = len(dat)
             for pairs in [['A', 'T'], ['T', 'A'], ['C', 'G'], ['G', 'C']]:
                 dat = dat[~((dat.A1 == pairs[0]) & (dat.A2 == pairs[1]))]
-            logging.info(f"{n - len(dat)} strand-ambigious SNPs were removed")
+            logging.info("{} strand-ambigious SNPs were removed".format(n - len(dat))
             dath = dat.rename(columns={'SNP': 'rsID', 'POS': 'pos', 'A1': 'A0', 'A2': 'A1', 'Z': 'Z-score'})
             for chrom in range(1, 23):
                 datchrom = dath[dath.CHR == chrom]
@@ -766,11 +767,21 @@ def munge_sumstats(args, p=True):
                     datchrom.to_csv(out_fname + '_chr' + str(chrom), sep='\t', index=False)
 
             p = False
+
+        if args.gcta:
+            dat = dat.rename_col
+
+
+
         dat = dat.drop('SIGNED_SUMSTAT', 1)
         if args.round_N:
             dat.N = dat.N.apply(np.floor).astype(int)
         if p:
-            if args.round_vals:
+            if args.gcta:
+                dat2 = dat.rename(columns={'Z': 'b', 'FRQ': 'freq', 'P': 'p', 'SE': 'se'})
+                dat2 = dat2[['SNP', 'A1', 'A2', 'freq', 'b', 'se', 'p', 'N']]
+                dat2.to_csv(out_fname, sep='\t', index=False)
+            elif args.round_vals:
                 dat.to_csv(out_fname, sep='\t', index=False, float_format='%.3f')
             else:
                 dat.to_csv(out_fname, sep='\t', index=False)
@@ -799,7 +810,7 @@ def munge_sumstats(args, p=True):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    logging.basicConfig(format="%(message)s", datefmt="%H:%M:%S", handlers=[logging.FileHandler(f"{args.out}.log"), 
+    logging.basicConfig(format="%(message)s", datefmt="%H:%M:%S", handlers=[logging.FileHandler("{}.log".format(args.out),
         logging.StreamHandler()], level=logging.DEBUG)
     munge_sumstats(args, p=True)
 
